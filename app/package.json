@@ -4,6 +4,10 @@
     "private": true,
     "dependencies": {
         "@apollo/react-hooks": "^4.0.0",
+        "@graphql-codegen/add": "^2.0.1",
+        "@graphql-codegen/typescript": "^1.17.11",
+        "@graphql-codegen/typescript-operations": "^1.17.9",
+        "@graphql-codegen/typescript-react-apollo": "^2.1.1",
         "@material-ui/core": "^4.11.0",
         "@material-ui/icons": "^4.9.1",
         "@testing-library/jest-dom": "^5.11.6",
@@ -36,11 +40,13 @@
         "web-vitals": "0.2.4"
     },
     "scripts": {
+        "prestart": "yarn codegen",
         "start": "react-scripts start",
         "build": "react-scripts build",
         "test": "react-scripts test",
         "eject": "react-scripts eject",
-        "format": "prettier \"**/*.{ts,tsx,css,graphql}\" --write"
+        "format": "prettier \"**/*.{ts,tsx,css,graphql}\" --write",
+        "codegen": "graphql-codegen"
     },
     "eslintConfig": {
         "extends": [
@@ -61,6 +67,7 @@
         ]
     },
     "devDependencies": {
+        "@graphql-codegen/cli": "^1.19.1",
         "apollo-link-mock": "^1.0.1"
     }
 }
