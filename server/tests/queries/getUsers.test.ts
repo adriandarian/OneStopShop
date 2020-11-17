@@ -1,30 +1,15 @@
 import { createTestClient } from 'apollo-server-testing';
-import { ApolloServer, gql } from 'apollo-server-express';
-import sql from 'sql-template-strings';
+import { gql } from 'apollo-server-express';
 
-import schema from '../../schema';
-import { pool } from '../../db';
-import { MyContext } from '../../context';
+import { server } from '../../server';
+import { resetDb } from '../../db';
+import { mockAuth } from '../mocks/auth.provider';
 
 describe('Query.getUsers', () => {
-  it('should fetch all users except the one signed-in', async () => {
-    const firstUserQuery = await pool.query(
-      sql`SELECT * FROM users WHERE id = 1`
-    );
-    let currentUser = firstUserQuery.rows[0];
-    const db = await pool.connect();
+  beforeEach(resetDb);
 
-    const server = new ApolloServer({
-      schema,
-      context: async () => ({
-        currentUser,
-        db: await pool.connect(),
-      }),
-      formatResponse: (res: any, { context }: any) => {
-        context.db.release();
-        return res;
-      },
-    });
+  it('should fetch all users except the one signed-in', async () => {
+    mockAuth(1);
 
     const { query } = createTestClient(server);
 
@@ -44,10 +29,7 @@ describe('Query.getUsers', () => {
     expect(res.errors).toBeUndefined();
     expect(res.data).toMatchSnapshot();
 
-    const secondUserQuery = await pool.query(
-      sql`SELECT * FROM users WHERE id = '2'`
-    );
-    currentUser = secondUserQuery.rows[0];
+    mockAuth(2);
 
     res = await query({
       query: gql`
