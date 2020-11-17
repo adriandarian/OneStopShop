@@ -10,6 +10,7 @@ const wsUri = httpUri.replace(/^https?/, 'ws');
  
 const httpLink = new HttpLink({
   uri: httpUri,
+  credentials: 'include',
 });
  
 const wsLink = new WebSocketLink({
@@ -28,6 +29,7 @@ export interface Definition {
   kind: string;
   operation?: string;
 }
+
 const terminatingLink = split(
   ({ query }) => {
     const { kind, operation }: Definition = getMainDefinition(query);
