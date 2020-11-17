@@ -21,11 +21,13 @@ const typeDefs = gql`
     recipient: User
     isMine: Boolean!
   }
+  
   type MessagesResult {
     cursor: Float
     hasMore: Boolean!
     messages: [Message!]!
   }
+
   type Chat {
     id: ID!
     name: String
@@ -34,15 +36,18 @@ const typeDefs = gql`
     messages(limit: Int!, after: Float): MessagesResult!
     participants: [User!]!
   }
+
   extend type Query {
     chats: [Chat!]!
     chat(chatId: ID!): Chat
   }
+
   extend type Mutation {
     addMessage(chatId: ID!, content: String!): Message
     addChat(recipientId: ID!): Chat
     removeChat(chatId: ID!): ID
   }
+
   extend type Subscription {
     messageAdded: Message!
     chatAdded: Chat!

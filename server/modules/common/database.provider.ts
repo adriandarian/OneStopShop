@@ -47,7 +47,7 @@ export class Database implements OnResponse {
     }
   }
 
-  async getClient() {
+  private getClient() {
     return this.instance;
   }
 

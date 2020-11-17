@@ -51,6 +51,7 @@ export const writeMessage = (client: Client, message: MessageFragment) => {
   if (chatIdFromStore === null) {
     return;
   }
+
   try {
     fullChat = client.readFragment<FullChat>({
       id: chatIdFromStore,
@@ -64,9 +65,10 @@ export const writeMessage = (client: Client, message: MessageFragment) => {
   if (fullChat === null || fullChat.messages === null) {
     return;
   }
-  if (fullChat.messages.some((m: any) => m.id === message.id)) return;
 
-  fullChat.messages.push(message);
+  if (fullChat.messages.messages.some((m: any) => m.id === message.id)) return;
+
+  fullChat.messages.messages.push(message);
   fullChat.lastMessage = message;
 
   client.writeFragment({
@@ -88,15 +90,18 @@ export const writeMessage = (client: Client, message: MessageFragment) => {
   if (!data || data === null) {
     return null;
   }
+
   if (!data.chats || data.chats === undefined) {
     return null;
   }
+
   const chats = data.chats;
 
   const chatIndex = chats.findIndex((c: any) => {
     if (message === null || message.chat === null) return -1;
     return c.id === message?.chat?.id;
   });
+
   if (chatIndex === -1) return;
   const chatWhereAdded = chats[chatIndex];
 
@@ -112,6 +117,7 @@ export const writeMessage = (client: Client, message: MessageFragment) => {
 
 export const writeChat = (client: Client, chat: ChatFragment) => {
   const chatId = defaultDataIdFromObject(chat);
+
   if (chatId === null) {
     return;
   }
@@ -154,6 +160,7 @@ export const eraseChat = (client: Client, chatId: string) => {
   };
 
   const chatIdFromObject = defaultDataIdFromObject(chatType);
+  
   if (chatIdFromObject === null) {
     return;
   }

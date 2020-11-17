@@ -1,9 +1,25 @@
 import { Injectable, Inject, ProviderScope } from '@graphql-modules/di';
 import sql from 'sql-template-strings';
 import format from 'date-fns/format';
+import { QueryResult } from 'pg';
+import DataLoader from 'dataloader';
 
 import { Database } from '../common/database.provider';
 import { PubSub } from '../common/pubsub.provider';
+import { Chat } from '../../db';
+
+type ChatsByUser = { userId: string };
+type ChatByUser = { userId: string; chatId: string };
+type ChatById = { chatId: string };
+type ChatsKey = ChatById | ChatByUser | ChatsByUser;
+
+function isChatsByUser(query: any): query is ChatsByUser {
+  return query.userId && !query.chatId;
+}
+
+function isChatByUser(query: any): query is ChatByUser {
+  return query.userId && query.chatId;
+}
 
 @Injectable({
   scope: ProviderScope.Session,
@@ -12,36 +28,85 @@ export class Chats {
   @Inject() private db: Database;
   @Inject() private pubsub: PubSub;
 
-  async findChatsByUser(userId: string) {
-    const db = await this.db.getClient();
+  private chatsCache = new Map<string, Chat>();
+  private loaders = {
+    chats: new DataLoader<ChatsKey, QueryResult['rows']>((keys) => {
+      return Promise.all(
+        keys.map(async (query) => {
+          if (isChatsByUser(query)) {
+            return this._findChatsByUser(query.userId);
+          }
 
-    const { rows } = await db.query(sql`
+          if (this.chatsCache.has(query.chatId)) {
+            return [this._readChatFromCache(query.chatId)];
+          }
+
+          if (isChatByUser(query)) {
+            return this._findChatByUser(query);
+          }
+
+          return this._findChatById(query.chatId);
+        })
+      );
+    }),
+  };
+
+  async findChatsByUser(userId: string) {
+    return this.loaders.chats.load({ userId });
+  }
+
+  private async _findChatsByUser(userId: string) {
+    const { rows } = await this.db.query(sql`
       SELECT chats.* FROM chats, chats_users
       WHERE chats.id = chats_users.chat_id
       AND chats_users.user_id = ${userId}
     `);
 
+    rows.forEach((row) => {
+      this._writeChatToCache(row);
+    });
+
     return rows;
   }
 
   async findChatByUser({ chatId, userId }: { chatId: string; userId: string }) {
-    const db = await this.db.getClient();
-    const { rows } = await db.query(sql`
+    const rows = await this.loaders.chats.load({ chatId, userId });
+
+    return rows[0] || null;
+  }
+
+  private async _findChatByUser({
+    chatId,
+    userId,
+  }: {
+    chatId: string;
+    userId: string;
+  }) {
+    const { rows } = await this.db.query(sql`
       SELECT chats.* FROM chats, chats_users
       WHERE chats_users.chat_id = ${chatId}
       AND chats.id = chats_users.chat_id
       AND chats_users.user_id = ${userId}
     `);
 
-    return rows[0] || null;
+    this._writeChatToCache(rows[0]);
+
+    return rows;
   }
 
   async findChatById(chatId: string) {
-    const db = await this.db.getClient();
-    const { rows } = await db.query(sql`
+    const rows = await this.loaders.chats.load({ chatId });
+    return rows[0] || null;
+  }
+
+  private async _findChatById(chatId: string) {
+    const { rows } = await this.db.query(sql`
       SELECT * FROM chats WHERE id = ${chatId}
     `);
-    return rows[0] || null;
+
+    this._writeChatToCache(rows[0]);
+
+    return rows;
   }
 
   async findMessagesByChat({
@@ -98,8 +163,7 @@ export class Chats {
   }
 
   async lastMessage(chatId: string) {
-    const db = await this.db.getClient();
-    const { rows } = await db.query(sql`
+    const { rows } = await this.db.query(sql`
       SELECT * FROM messages
       WHERE chat_id = ${chatId}
       ORDER BY created_at DESC
@@ -110,8 +174,7 @@ export class Chats {
   }
 
   async firstRecipient({ chatId, userId }: { chatId: string; userId: string }) {
-    const db = await this.db.getClient();
-    const { rows } = await db.query(sql`
+    const { rows } = await this.db.query(sql`
       SELECT users.* FROM users, chats_users
       WHERE users.id != ${userId}
       AND users.id = chats_users.user_id
@@ -122,8 +185,7 @@ export class Chats {
   }
 
   async participants(chatId: string) {
-    const db = await this.db.getClient();
-    const { rows } = await db.query(sql`
+    const { rows } = await this.db.query(sql`
       SELECT users.* FROM users, chats_users
       WHERE chats_users.chat_id = ${chatId}
       AND chats_users.user_id = users.id
@@ -133,8 +195,7 @@ export class Chats {
   }
 
   async isParticipant({ chatId, userId }: { chatId: string; userId: string }) {
-    const db = await this.db.getClient();
-    const { rows } = await db.query(sql`
+    const { rows } = await this.db.query(sql`
       SELECT * FROM chats_users
       WHERE chat_id = ${chatId}
       AND user_id = ${userId}
@@ -152,8 +213,7 @@ export class Chats {
     userId: string;
     content: string;
   }) {
-    const db = await this.db.getClient();
-    const { rows } = await db.query(sql`
+    const { rows } = await this.db.query(sql`
       INSERT INTO messages(chat_id, sender_user_id, content)
       VALUES(${chatId}, ${userId}, ${content})
       RETURNING *
@@ -175,8 +235,7 @@ export class Chats {
     userId: string;
     recipientId: string;
   }) {
-    const db = await this.db.getClient();
-    const { rows } = await db.query(sql`
+    const { rows } = await this.db.query(sql`
       SELECT chats.* FROM chats, (SELECT * FROM chats_users WHERE user_id = ${userId}) AS chats_of_current_user, chats_users
       WHERE chats_users.chat_id = chats_of_current_user.chat_id
       AND chats.id = chats_users.chat_id
@@ -189,9 +248,9 @@ export class Chats {
     }
 
     try {
-      await db.query('BEGIN');
+      await this.db.query('BEGIN');
 
-      const { rows } = await db.query(sql`
+      const { rows } = await this.db.query(sql`
         INSERT INTO chats
         DEFAULT VALUES
         RETURNING *
@@ -199,17 +258,17 @@ export class Chats {
 
       const chatAdded = rows[0];
 
-      await db.query(sql`
+      await this.db.query(sql`
         INSERT INTO chats_users(chat_id, user_id)
         VALUES(${chatAdded.id}, ${userId})
       `);
 
-      await db.query(sql`
+      await this.db.query(sql`
         INSERT INTO chats_users(chat_id, user_id)
         VALUES(${chatAdded.id}, ${recipientId})
       `);
 
-      await db.query('COMMIT');
+      await this.db.query('COMMIT');
 
       this.pubsub.publish('chatAdded', {
         chatAdded,
@@ -217,18 +276,26 @@ export class Chats {
 
       return chatAdded;
     } catch (e) {
-      await db.query('ROLLBACK');
+      await this.db.query('ROLLBACK');
       throw e;
     }
   }
 
+  private _readChatFromCache(chatId: string) {
+    return this.chatsCache.get(chatId);
+  }
+
+  private _writeChatToCache(chat?: Chat) {
+    if (chat) {
+      this.chatsCache.set(chat.id, chat);
+    }
+  }
+
   async removeChat({ chatId, userId }: { chatId: string; userId: string }) {
-    const db = await this.db.getClient();
-
     try {
-      await db.query('BEGIN');
+      await this.db.query('BEGIN');
 
-      const { rows } = await db.query(sql`
+      const { rows } = await this.db.query(sql`
         SELECT chats.* FROM chats, chats_users
         WHERE id = ${chatId}
         AND chats.id = chats_users.chat_id
@@ -238,11 +305,11 @@ export class Chats {
       const chat = rows[0];
 
       if (!chat) {
-        await db.query('ROLLBACK');
+        await this.db.query('ROLLBACK');
         return null;
       }
 
-      await db.query(sql`
+      await this.db.query(sql`
         DELETE FROM chats WHERE chats.id = ${chatId}
       `);
 
@@ -251,11 +318,11 @@ export class Chats {
         targetChat: chat,
       });
 
-      await db.query('COMMIT');
+      await this.db.query('COMMIT');
 
       return chatId;
     } catch (e) {
-      await db.query('ROLLBACK');
+      await this.db.query('ROLLBACK');
       throw e;
     }
   }

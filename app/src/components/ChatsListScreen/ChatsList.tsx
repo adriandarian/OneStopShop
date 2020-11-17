@@ -1,11 +1,12 @@
 import React, { useCallback } from 'react';
 import { History } from 'history';
-import moment from 'moment';
+import format from 'date-fns/format';
 import { List, ListItem } from '@material-ui/core';
 import styled from 'styled-components';
 import gql from 'graphql-tag';
 
 import { useChatsQuery } from '../../graphql/types';
+import { useGetChatPrefetch } from '../ChatRoomScreen';
 
 const Container = styled.div`
   height: calc(100% - 56px);
@@ -71,6 +72,8 @@ const ChatsList: React.FC<ChatsListProps> = ({ history }) => {
     [history]
   );
 
+  const prefetchChat = useGetChatPrefetch();
+
   const { data } = useChatsQuery();
 
   if (data === undefined || data.chats === undefined) {
@@ -87,7 +90,10 @@ const ChatsList: React.FC<ChatsListProps> = ({ history }) => {
             key={chat.id}
             data-testid="chat"
             button
-            onClick={navToChat.bind(null, chat)}>
+            onClick={navToChat.bind(null, chat)}
+            onMouseEnter={() => {
+              prefetchChat(chat.id);
+            }}>
             <ChatPicture
               data-testid="picture"
               src={chat.picture}
@@ -101,7 +107,7 @@ const ChatsList: React.FC<ChatsListProps> = ({ history }) => {
                     {chat.lastMessage.content}
                   </MessageContent>
                   <MessageDate data-testid="date">
-                    {moment(chat.lastMessage.createdAt).format('HH:mm')}
+                    {format(chat.lastMessage.createdAt, 'HH:mm')}
                   </MessageDate>
                 </React.Fragment>
               )}
