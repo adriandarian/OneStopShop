@@ -16,7 +16,7 @@ describe('Query.me', () => {
         currentUser,
         db: await pool.connect(),
       }),
-      formatResponse: (res: any, { context }: { context: MyContext }) => {
+      formatResponse: (res: any, { context }: any) => {
         context.db.release();
         return res;
       },

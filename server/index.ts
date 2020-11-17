@@ -12,11 +12,11 @@ import { pool } from './db';
 import { MyContext } from './context';
 
 const pubsub = new PostgresPubSub({
-  host: 'localhost',
-  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5432,
-  user: 'testuser',
-  password: 'testpassword',
-  database: 'whatsapp',
+  host: 'host.docker.internal',
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 35432,
+  user: 'docker',
+  password: 'docker',
+  database: 'hci',
 });
 const server = new ApolloServer({
   schema,
@@ -63,7 +63,7 @@ const server = new ApolloServer({
       };
     },
   },
-  formatResponse: (res: any, { context }: { context: MyContext }) => {
+  formatResponse: (res: any, { context }: any) => {
     context.db.release();
 
     return res;
