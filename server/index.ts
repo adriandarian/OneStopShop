@@ -10,6 +10,7 @@ import { origin, port, secret } from './env';
 import schema from './schema';
 import { pool } from './db';
 import { MyContext } from './context';
+import { UnsplashApi } from './schema/unsplash.api';
 
 const pubsub = new PostgresPubSub({
   host: 'host.docker.internal',
@@ -68,6 +69,9 @@ const server = new ApolloServer({
 
     return res;
   },
+  dataSources: () => ({
+    unsplashApi: new UnsplashApi(),
+  }),
 });
 
 server.applyMiddleware({
