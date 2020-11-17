@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import styled from 'styled-components';
 import { History } from 'history';
 import gql from 'graphql-tag';
+import { Redirect } from 'react-router-dom';
 
 import ChatNavbar from './ChatNavbar';
 import MessageInput from './MessageInput';
@@ -93,13 +94,18 @@ const ChatRoomScreen: React.FC<ChatRoomScreenParams> = ({
 
   const chat = data.chat;
   const loadingChat = loading;
- 
+
   if (loadingChat) return null;
   if (chat === null) return null;
 
+  // Chat was probably removed from cache by the subscription handler
+  if (!chat) {
+    return <Redirect to="/chats" />;
+  }
+
   return (
     <Container>
-      <ChatNavbar chat={chat} history={history} />
+      {chat?.id && <ChatNavbar chat={chat} history={history} />}
       {chat?.messages && <MessagesList messages={chat.messages} />}
       <MessageInput onSendMessage={onSendMessage} />
     </Container>
