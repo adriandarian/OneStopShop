@@ -1,0 +1,39 @@
+[general]
+RemoteNickFormat="{NICK} ({BRIDGE}): "
+PreserveThreading=true
+# Show messages announcing when people arrive/leave remote channels
+#[slack.example]
+##Token to connect with the Slack API
+##You'll have to use a test/api-token using a dedicated user and not a bot token.
+##See https://github.com/42wim/matterbridge/wiki/Slack-bot-setup for more information
+#Token="${SLACK_EXAMPLE_TOKEN}" # real user
+
+[slack.hci]
+Token="${SLACK_TOKEN}" # real user who may be a bot: matter 
+
+## TELEGRAM EXAMPLE
+# [telegram.hacklabto]
+# Token="${TELEGRAM_TOKEN}" # bot user: hacklabto_bridgebot
+# RemoteNickFormat="{NICK}@{PROTOCOL}: "
+# UseInsecureURL=true
+
+[discord.hci]
+# You can get your token by following the instructions on
+# https://github.com/42wim/matterbridge/wiki/Discord-bot-setup
+# If you want roles/groups mentions to be shown with names instead of ID,
+# you'll need to give your bot the "Manage Roles" permission.
+Token="${DISCORD_TOKEN}"
+Server="${DISCORD_SERVERID}" # picked from guilds the bot is connected to
+# RemoteNickFormat="[{PROTOCOL}] @{NICK} "
+
+[[gateway]]
+name="gateway1"
+enable=true
+
+[[gateway.inout]]
+account="discord.hci"
+channel="bridge"
+
+[[gateway.inout]]
+account="slack.hci"
+channel="bridge"
