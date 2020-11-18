@@ -1,7 +1,0 @@
-dist
-node_modules/
-npm-debug.log
-test-results/
-types/graphql.d.ts
-types/unsplash.d.ts
-loadtest.log
