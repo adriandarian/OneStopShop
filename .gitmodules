@@ -1,0 +1,9 @@
+[submodule "OneStopShop-Client"]
+	path = OneStopShop-Client
+	url = https://github.com/adriandarian/OneStopShop-Client.git
+[submodule "OneStopShop-Server"]
+	path = OneStopShop-Server
+	url = https://github.com/adriandarian/OneStopShop-Server.git
+[submodule "OneStopShop-Bridge"]
+	path = OneStopShop-Bridge
+	url = https://github.com/adriandarian/OneStopShop-Bridge.git
