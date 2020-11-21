@@ -45,3 +45,9 @@ services:
               mode: bridge # bridge networks are used to connect multiple containers together
         networks:
           - hci
+
+    matterbridge:
+        image: 42wim/matterbridge
+        restart: unless-stopped
+        volumes:
+            - /tmp/matterbridge.toml:/matterbridge.toml
