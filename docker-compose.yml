@@ -45,9 +45,39 @@ services:
               mode: bridge # bridge networks are used to connect multiple containers together
         networks:
           - hci
+    
+    # OneStopShop Client
+    app:
+        container_name: app
+        build:
+            context: ./OneStopShop-Client
+            dockerfile: Dockerfile
+        depends_on:
+            - server
+        ports: 
+            - target: 80
+              published: 3000
+              protocol: tcp
+              mode: bridge
+    
+    # OneStopShop Server
+    server:
+        container_name: server
+        build:
+            context: ./OneStopShop-Server
+            dockerfile: Dockerfile
+        depends_on:
+            - pgadmin
+        env_file:
+            - ./OneStopShop-Server/.env
+        ports:
+            - target: 4000
+              published: 4000
+              protocol: tcp
+              mode: bridge
 
     matterbridge:
         image: 42wim/matterbridge
         restart: unless-stopped
         volumes:
-            - /tmp/matterbridge.toml:/matterbridge.toml
+        - ./matterbridge:/etc/matterbridge

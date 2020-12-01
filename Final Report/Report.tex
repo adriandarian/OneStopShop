@@ -1,0 +1,101 @@
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template} 
+\usepackage{graphicx,url}
+\usepackage{url}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}
+\usepackage[normalem]{ulem}
+\usepackage[hidelinks]{hyperref}
+
+\usepackage[square,authoryear]{natbib}
+\usepackage{amssymb} 
+\usepackage{mathalfa} 
+\usepackage{algorithm} 
+\usepackage{algpseudocode} 
+\usepackage[table]{xcolor}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{mdframed}
+\usepackage{listings}
+
+\usepackage{amsmath} 
+\usepackage{booktabs}
+
+\urlstyle{same}
+
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\newcommand\Tstrut{\rule{0pt}{2.6ex}} 
+\newcommand\Bstrut{\rule[-0.9ex]{0pt}{0pt}} 
+\newcommand{\scell}[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+
+\usepackage[nolist,nohyperlinks]{acronym}
+
+\title{CSE 155: Final Report}
+
+\author{Author\inst{1}}
+
+
+\address{Adrian Darian, Orion Johnson, Shivanshu Gupta
+	\email{adarian@ucmerced.edu}
+}
+
+
+
+\begin{document} 
+	
+\maketitle
+	
+\section{Introduction}
+\label{sec:introduction}
+	
+Our project will be a tool that allows a user to link multiple chatting or messaging services together. For example, if your company uses Slack or hangouts to communicate, but you have some private chats with co-workers on facebook messenger. The user can now link all the accounts together and read/send messages in between. Starting a meeting via video call, will be as simple as selecting which platform the meeting will be on from your linked accounts and sending an invite to that group. We are not forcing users to subscribe to our service or anything, it would be free to use for as much and as long as the user wishes. The idea behind it, mainly came from teams onboarding new members and watching managers explain how they use this service for X and this other service for Y, while for all other forms of talk they use service Z. 
+	
+\section{Problems}
+\label{sec:problems}
+	
+When working at a company you are typically introduced to a new  platform to communicate with your team in or provided with one. 
+
+\begin{enumerate}
+	\item Older generation forced to adept to a new platform
+	\item Multiple platforms with similar channels to communicate
+	\item Different organizations that all would like their members to communicate together but do not want a new platform
+	\item Managers having to spend time teaching new employees or creating a "how to" doc for them
+\end{enumerate}
+	
+\section{Why/How}
+\label{sec:why/how}
+	
+Looking at this scenario, you are in a company that has an engineering team, logisitics team and a marketing team. You are tasked with communicating with individuals from another team. Normally you would need to join what ever platform they use on their team and then message each individual there. Now you have multiple platforms to check each day at work. With a bridge you would only need to be invited to a channel or group from that team and you can start communicating right away.
+	
+\section{Design}
+\label{sec:design}
+	
+We built a single server that acts as an entry point to bridge different platforms together. This allows a user to message with their personal account on any connected platform and all other members that can view or have access to that channel will receive the message and may reply. Because we can do all this with one server the whole project is actually quite a simple design. The only difference we would need to perform would be what the names and avatar icons are when new members join the new channels.
+	
+\section{Implementation}
+\label{sec:implementation}
+	
+To connect each platform together was a little more difficult than imagined. For example to link specifically Slack and Discord to this bridge we need to build a bot for each platform and invite it to each discord server and slack workspace. This is by design so the bot is the one forwarding the messages to the other platforms. While for Microsoft Teams we were able to load the bridge as an application on Microsoft Azure and have that forward messages through it to the deployed bridge server. As per Gitter and Telegram platforms we simply needed to create a temporary user and all messages would filter through them. Leaving it to just invite the user to each channel and everything was setup. As for Whatsapp that was a lot more difficult, due to the amount of encryption in Whatsapp we could not simply add a bot. We had to follow Whatsapp's online guide and build a Webapp host and configure a publisher/subscriber connection stream between that and the channels in Whatsapp.
+	
+\section{Results}
+\label{sec:results}
+	
+We tested the deployed application out with a few friends and coworkers from different clubs and companies and got an overwhelming positive feedback. Not only was it more conveinent to just open one app of choice and start talking to anyone on your team (test group), but the accessibility to even start a private conversation with someone when they were on Discord and the other was on Telegram, was seemless.
+
+However there were a lot of concerns with security, because if we are opening each platform up to share a communication channel with another platform(s) then we have to consider the fact that not all platforms have the same level of encryption and security for your messages. What is stopping someone from hacking into slack and now having access to all your messages in Telegram and Whatsapp at the same time? 
+	
+\section{Conclusion}
+\label{sec:conclusion}
+
+In conclusion with more time to figure out how to connect more platforms together and researching more into encryption and security this could be a actually company requirement or neccessity. Right now it just lacks the breath of how many platforms can be connected and especially how secure communicating to a channel on another platform is
+
+	
+\bibliographystyle{plain}
+\bibliography{references}
+	
+\end{document}
