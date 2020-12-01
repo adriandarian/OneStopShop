@@ -80,4 +80,4 @@ services:
         image: 42wim/matterbridge
         restart: unless-stopped
         volumes:
-        - ./matterbridge:/etc/matterbridge
+            - ./OneStopShop-Bridge/config:/etc/matterbridge
