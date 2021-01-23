@@ -76,8 +76,49 @@ services:
               protocol: tcp
               mode: bridge
 
-    matterbridge:
-        image: 42wim/matterbridge
-        restart: unless-stopped
-        volumes:
-            - ./OneStopShop-Bridge/config:/etc/matterbridge
+    app:
+        container_name: app
+        build:
+            context: ./OneStopShop-Client
+            dockerfile: Dockerfile
+        depends_on:
+            - postgres
+            - pgadmin
+            - server
+        environment:
+            POSTGRES_HOST: host.docker.internal
+            POSTGRES_PORT: 35432
+            POSTGRES_DB: hci
+            POSTGRES_USER: docker
+            POSTGRES_PASSWORD: docker
+        ports:
+            - target: 80 # the port inside the container
+              published: 3000 # the publicly exposed port
+              protocol: tcp # the port protocol (tcp or udp)
+              mode: bridge # bridge networks are used to connect multiple containers together
+
+    server:
+        container_name: server
+        build:
+            context: ./OneStopShop-Server
+            dockerfile: Dockerfile
+        depends_on:
+            - postgres
+            - pgadmin
+        environment:
+            POSTGRES_HOST: host.docker.internal
+            POSTGRES_PORT: 35432
+            POSTGRES_DB: hci
+            POSTGRES_USER: docker
+            POSTGRES_PASSWORD: docker
+        ports:
+            - target: 4000 # the port inside the container
+              published: 4000 # the publicly exposed port
+              protocol: tcp # the port protocol (tcp or udp)
+              mode: bridge # bridge networks are used to connect multiple containers together
+
+    # matterbridge:
+    #     image: 42wim/matterbridge
+    #     restart: unless-stopped
+    #     volumes:
+    #         - /tmp/matterbridge.toml:/matterbridge.toml
